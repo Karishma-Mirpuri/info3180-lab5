@@ -28,12 +28,15 @@ def about():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('secure_page'))
+        
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
         username = form.username.data
         password = form.password.data
             
-        user = UserProfile.query.filter_by(username='karishma', password='password').first()
+        user = UserProfile.query.filter_by(username=username, password=password).first()
         if user is not None:
             login_user(user)
             flash('Logged in successfully.', 'success')
@@ -41,7 +44,7 @@ def login():
             return redirect(url_for('secure_page'))
         else:
             flash('Username or Password is incorrect.', 'danger')
-    flash_errors(form)
+    #flash_errors(form)
     return render_template('login.html', form=form)
 
 # user_loader callback. This callback is used to reload the user object from
@@ -49,7 +52,18 @@ def login():
 @login_manager.user_loader
 def load_user(id):
     return UserProfile.query.get(int(id))
+    
+@app.route('/secure-page')
+@login_required
+def secure_page():
+    return render_template('secure.html')
 
+@app.route("/logout")    
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('home'))
 ###
 # The functions below should be applicable to all Flask apps.
 ###
